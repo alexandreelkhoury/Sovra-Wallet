@@ -10,11 +10,9 @@ export default defineConfig({
   resolve: {
     alias: {
       buffer: 'buffer',
-      util: 'util',
-      process: 'process/browser',
     }
   },
   optimizeDeps: {
-    include: ['buffer', 'util', 'process']
+    include: ['buffer']
   }
 })

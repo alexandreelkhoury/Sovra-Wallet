@@ -1,12 +1,4 @@
-export interface WalletState {
-  isConnected: boolean
-  address: string | null
-  ethBalance: string
-  usdcBalance: string
-  isLoading: boolean
-  error: string | null
-}
-
+// Transaction result type for Privy operations
 export interface TransactionResult {
   hash: string
   status: 'pending' | 'confirmed' | 'failed'
@@ -14,6 +6,7 @@ export interface TransactionResult {
   timestamp: number
 }
 
+// Aave lending position information
 export interface AavePosition {
   supplied: string
   apy: string

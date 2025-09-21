@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useAaveWETHOperations } from '../../hooks/useAaveWETHOperations'
-import { useWETHBalance } from '../../hooks/useWETHBalance'
+import { useWETHBalanceContext } from '../../context/WETHBalanceContext'
 import { useAaveAPY } from '../../hooks/useAaveAPY'
+import { LoadingSpinner } from '../ui/LoadingSpinner'
 
 export const AaveWETHLending: React.FC = () => {
-  const { balance: walletBalance, refetch: refetchWalletBalance } = useWETHBalance()
+  const { balance: walletBalance, refetch: refetchWalletBalance } = useWETHBalanceContext()
   const { supplyWETH, withdrawWETH, getSuppliedBalance, isSupplying, isWithdrawing, error } = useAaveWETHOperations(refetchWalletBalance)
-  const { apy, formatAPY, convertWETHToUSD, isLoading: isAPYLoading } = useAaveAPY()
+  const { apy, formatAPY, isLoading: isAPYLoading } = useAaveAPY()
   const [amount, setAmount] = useState('')
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [suppliedBalance, setSuppliedBalance] = useState('0')
@@ -72,23 +73,20 @@ export const AaveWETHLending: React.FC = () => {
     : true // Allow withdraw all if no amount specified
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
+    <div className="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 p-4 sm:p-6">
       <div className="mb-4 sm:mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-2 sm:mb-0">Aave WETH Lending</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-0">Aave WETH Lending</h2>
           <div className="text-left sm:text-right">
-            <p className="text-xs sm:text-sm text-gray-600">Supplied Balance</p>
+            <p className="text-xs sm:text-sm text-slate-400">Supplied Balance</p>
             {isLoadingSupplied ? (
               <div className="animate-pulse">
-                <div className="h-5 sm:h-6 bg-gray-200 rounded w-20"></div>
+                <div className="h-5 sm:h-6 bg-slate-600 rounded w-20"></div>
               </div>
             ) : (
               <>
-                <p className="text-base sm:text-lg font-bold text-green-600">
+                <p className="text-base sm:text-lg font-bold text-green-400">
                   {parseFloat(suppliedBalance).toFixed(6)} WETH
-                </p>
-                <p className="text-xs text-gray-400">
-                  {convertWETHToUSD(suppliedBalance)}
                 </p>
               </>
             )}
@@ -96,32 +94,45 @@ export const AaveWETHLending: React.FC = () => {
         </div>
         
         {/* APY Display */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+        <div className="bg-green-900/20 border border-green-700 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-green-800">Current Supply APY</span>
+              <span className="text-sm font-medium text-green-300">Current Supply APY</span>
             </div>
             <div className="text-right">
               {isAPYLoading ? (
-                <div className="animate-pulse bg-green-200 rounded w-12 h-4"></div>
+                <div className="animate-pulse bg-green-700 rounded w-12 h-4"></div>
               ) : (
-                <span className="text-lg font-bold text-green-700">
+                <span className="text-lg font-bold text-green-300">
                   {formatAPY(apy)}
                 </span>
               )}
             </div>
           </div>
-          <p className="text-xs text-green-600 mt-1">
+          <p className="text-xs text-green-400 mt-1">
             Earn interest on your supplied WETH
           </p>
+        </div>
+      </div>
+
+      {/* Gasless Transaction Badge */}
+      <div className="bg-green-900/20 border border-green-700 rounded-lg p-3 mb-4">
+        <div className="flex items-center space-x-2">
+          <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <div>
+            <p className="text-sm font-medium text-green-300">⚡ Gasless Transactions</p>
+            <p className="text-xs text-green-400">All supply and withdraw operations are sponsored</p>
+          </div>
         </div>
       </div>
 
       {/* Supply Section */}
       <div className="space-y-4 mb-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-white mb-2">
             Supply WETH to Aave
           </label>
           <div className="relative">
@@ -130,7 +141,7 @@ export const AaveWETHLending: React.FC = () => {
               placeholder="0.0"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-3 sm:px-4 py-3 pr-16 sm:pr-20 text-base sm:text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 sm:px-4 py-3 pr-16 sm:pr-20 text-base sm:text-lg bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400"
               disabled={isSupplying}
             />
             <button
@@ -141,21 +152,15 @@ export const AaveWETHLending: React.FC = () => {
               MAX
             </button>
           </div>
-          <div className="flex flex-col sm:flex-row sm:justify-between text-xs sm:text-sm text-gray-600 mt-1 space-y-1 sm:space-y-0">
+          <div className="flex flex-col sm:flex-row sm:justify-between text-xs sm:text-sm text-slate-400 mt-1 space-y-1 sm:space-y-0">
             <div>
               <span>Available: {parseFloat(walletBalance).toFixed(6)} WETH</span>
-              <span className="text-gray-400 ml-2">({convertWETHToUSD(walletBalance)})</span>
             </div>
             {amount && (
               <div className="flex flex-col sm:items-end">
-                <span className={canSupply ? 'text-green-600' : 'text-red-600'}>
+                <span className={canSupply ? 'text-green-400' : 'text-red-400'}>
                   {canSupply ? '✓ Valid amount' : '✗ Insufficient balance'}
                 </span>
-                {amount && canSupply && (
-                  <span className="text-gray-400 text-xs">
-                    ≈ {convertWETHToUSD(amount)}
-                  </span>
-                )}
               </div>
             )}
           </div>
@@ -168,7 +173,7 @@ export const AaveWETHLending: React.FC = () => {
         >
           {isSupplying ? (
             <div className="flex items-center justify-center space-x-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <LoadingSpinner size="md" color="white" />
               <span>Supplying...</span>
             </div>
           ) : (
@@ -178,9 +183,9 @@ export const AaveWETHLending: React.FC = () => {
       </div>
 
       {/* Withdraw Section */}
-      <div className="border-t border-gray-200 pt-6 space-y-4">
+      <div className="border-t border-slate-600 pt-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-white mb-2">
             Withdraw WETH from Aave
           </label>
           <div className="relative">
@@ -189,7 +194,7 @@ export const AaveWETHLending: React.FC = () => {
               placeholder="0.0"
               value={withdrawAmount}
               onChange={(e) => setWithdrawAmount(e.target.value)}
-              className="w-full px-4 py-3 pr-20 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-4 py-3 pr-20 text-lg bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 placeholder-slate-400"
               disabled={isWithdrawing}
             />
             <button
@@ -200,21 +205,15 @@ export const AaveWETHLending: React.FC = () => {
               MAX
             </button>
           </div>
-          <div className="flex flex-col sm:flex-row sm:justify-between text-xs sm:text-sm text-gray-600 mt-1 space-y-1 sm:space-y-0">
+          <div className="flex flex-col sm:flex-row sm:justify-between text-xs sm:text-sm text-slate-400 mt-1 space-y-1 sm:space-y-0">
             <div>
               <span>Available: {parseFloat(suppliedBalance).toFixed(6)} WETH</span>
-              <span className="text-gray-400 ml-2">({convertWETHToUSD(suppliedBalance)})</span>
             </div>
             {withdrawAmount && (
               <div className="flex flex-col sm:items-end">
-                <span className={canWithdrawAmount ? 'text-green-600' : 'text-red-600'}>
+                <span className={canWithdrawAmount ? 'text-green-400' : 'text-red-400'}>
                   {canWithdrawAmount ? '✓ Valid amount' : '✗ Insufficient balance'}
                 </span>
-                {withdrawAmount && canWithdrawAmount && (
-                  <span className="text-gray-400 text-xs">
-                    ≈ {convertWETHToUSD(withdrawAmount)}
-                  </span>
-                )}
               </div>
             )}
           </div>
@@ -227,7 +226,7 @@ export const AaveWETHLending: React.FC = () => {
         >
           {isWithdrawing ? (
             <div className="flex items-center justify-center space-x-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <LoadingSpinner size="md" color="white" />
               <span>Withdrawing...</span>
             </div>
           ) : (
@@ -240,18 +239,19 @@ export const AaveWETHLending: React.FC = () => {
 
       {/* Error Display */}
       {error && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="mt-4 p-3 bg-red-900/20 border border-red-700 rounded-lg">
+          <p className="text-sm text-red-300">{error}</p>
         </div>
       )}
 
       {/* Info Section */}
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-        <h3 className="font-medium text-blue-900 mb-2">How it works</h3>
-        <ul className="text-sm text-blue-800 space-y-1">
+      <div className="mt-6 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
+        <h3 className="font-medium text-blue-300 mb-2">How it works</h3>
+        <ul className="text-sm text-blue-200 space-y-1">
           <li>• Supply WETH to earn interest on Aave</li>
           <li>• Your WETH is converted to aWETH tokens</li>
           <li>• Withdraw anytime to get your WETH back</li>
+          <li>• ⚡ All transactions are gasless (sponsored) - no fees!</li>
           <li>• All transactions use your connected wallet (Rabby/MetaMask)</li>
         </ul>
       </div>

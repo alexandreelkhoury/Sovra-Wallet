@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { useWallets, useSendTransaction } from '@privy-io/react-auth'
+import { useWallets } from '@privy-io/react-auth'
+import { useSmartWallets } from '@privy-io/react-auth/smart-wallets'
 import { usePublicClient } from 'wagmi'
 import { parseUnits, encodeFunctionData, Address, formatUnits } from 'viem'
 import { CONTRACT_ADDRESSES } from '../config/privy'
+import { useTransactionManager } from './useTransactionManager'
 
 // ERC-20 ABI for approve
 const ERC20_ABI = [
@@ -54,8 +56,9 @@ const AAVE_POOL_ABI = [
 
 export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
   const { wallets } = useWallets()
-  const { sendTransaction } = useSendTransaction()
+  const { client: smartWalletClient } = useSmartWallets()
   const publicClient = usePublicClient()
+  const { executeTransaction } = useTransactionManager()
   const [isSupplying, setIsSupplying] = useState(false)
   const [isWithdrawing, setIsWithdrawing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -103,41 +106,55 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
       })
 
       // Step 1: Approve WETH to Aave Pool
-      console.log('Approving WETH...')
+      console.log('Approving WETH with smart wallet (gasless)...')
       const approveData = encodeFunctionData({
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [CONTRACT_ADDRESSES.AAVE_POOL, amountWei]
       })
 
-      const approveTxResult = await sendTransaction({
-        to: CONTRACT_ADDRESSES.WETH,
-        data: approveData,
-      }, {
-        address: activeWallet.address
-      })
+      const approveTxHash = await executeTransaction(
+        async () => {
+          if (!smartWalletClient) {
+            throw new Error('Smart wallet client not available')
+          }
+          const hash = await smartWalletClient.sendTransaction({
+            to: CONTRACT_ADDRESSES.WETH,
+            data: approveData,
+          })
+          return { hash }
+        },
+        'WETH approval (gasless)'
+      )
 
-      console.log('Approval transaction:', approveTxResult.hash)
+      console.log('Approval transaction:', approveTxHash)
 
       // Wait a bit for the approval to be confirmed
       await new Promise(resolve => setTimeout(resolve, 3000))
 
       // Step 2: Supply WETH to Aave
-      console.log('Supplying WETH to Aave...')
+      console.log('Supplying WETH to Aave with smart wallet (gasless)...')
       const supplyData = encodeFunctionData({
         abi: AAVE_POOL_ABI,
         functionName: 'supply',
         args: [CONTRACT_ADDRESSES.WETH, amountWei, userAddress, 0]
       })
 
-      const supplyTxResult = await sendTransaction({
-        to: CONTRACT_ADDRESSES.AAVE_POOL,
-        data: supplyData,
-      }, {
-        address: activeWallet.address
-      })
+      const supplyTxHash = await executeTransaction(
+        async () => {
+          if (!smartWalletClient) {
+            throw new Error('Smart wallet client not available')
+          }
+          const hash = await smartWalletClient.sendTransaction({
+            to: CONTRACT_ADDRESSES.AAVE_POOL,
+            data: supplyData,
+          })
+          return { hash }
+        },
+        'WETH supply to Aave (gasless)'
+      )
 
-      console.log('Supply transaction:', supplyTxResult.hash)
+      console.log('Supply transaction:', supplyTxHash)
       
       // Refresh wallet WETH balance after successful supply
       if (onBalanceUpdate) {
@@ -145,7 +162,7 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
         setTimeout(onBalanceUpdate, 5000)
       }
       
-      return supplyTxResult.hash
+      return supplyTxHash
 
     } catch (error) {
       console.error('Supply failed:', error)
@@ -189,14 +206,21 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
         args: [CONTRACT_ADDRESSES.WETH, withdrawAmount, userAddress]
       })
 
-      const withdrawTxResult = await sendTransaction({
-        to: CONTRACT_ADDRESSES.AAVE_POOL,
-        data: withdrawData,
-      }, {
-        address: activeWallet.address
-      })
+      const withdrawTxHash = await executeTransaction(
+        async () => {
+          if (!smartWalletClient) {
+            throw new Error('Smart wallet client not available')
+          }
+          const hash = await smartWalletClient.sendTransaction({
+            to: CONTRACT_ADDRESSES.AAVE_POOL,
+            data: withdrawData,
+          })
+          return { hash }
+        },
+        'WETH withdrawal from Aave (gasless)'
+      )
 
-      console.log('Withdraw transaction:', withdrawTxResult.hash)
+      console.log('Withdraw transaction:', withdrawTxHash)
       
       // Refresh wallet WETH balance after successful withdraw
       if (onBalanceUpdate) {
@@ -204,7 +228,7 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
         setTimeout(onBalanceUpdate, 5000)
       }
       
-      return withdrawTxResult.hash
+      return withdrawTxHash
 
     } catch (error) {
       console.error('Withdraw failed:', error)

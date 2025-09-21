@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { baseSepolia } from 'viem/chains'
 import { useAccount, useSwitchChain } from 'wagmi'
+import { LoadingSpinner } from './LoadingSpinner'
 
 export const NetworkSwitcher: React.FC = () => {
   const { chain: currentChain, isConnected } = useAccount()
@@ -136,7 +137,7 @@ export const NetworkSwitcher: React.FC = () => {
               )}
               
               {isPending && (
-                <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                <LoadingSpinner size="sm" color="green" />
               )}
             </button>
 

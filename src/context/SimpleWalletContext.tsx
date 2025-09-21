@@ -5,6 +5,7 @@ interface SimpleWalletState {
   isConnected: boolean
   address?: string
   isLoading: boolean
+  isInjectedWallet: boolean
 }
 
 interface SimpleWalletContextType {
@@ -32,6 +33,7 @@ export const SimpleWalletProvider: React.FC<SimpleWalletProviderProps> = ({ chil
   const [walletState, setWalletState] = useState<SimpleWalletState>({
     isConnected: false,
     isLoading: true,
+    isInjectedWallet: false,
   })
 
   useEffect(() => {
@@ -41,16 +43,19 @@ export const SimpleWalletProvider: React.FC<SimpleWalletProviderProps> = ({ chil
       if (authenticated && wallets.length > 0) {
         // Prioritize injected wallets (Rabby, MetaMask, etc.) over embedded
         const activeWallet = wallets.find(wallet => wallet.connectorType === 'injected') || wallets[0]
+        const isInjected = activeWallet.connectorType === 'injected'
         
         setWalletState({
           isConnected: true,
           address: activeWallet.address,
           isLoading: false,
+          isInjectedWallet: isInjected,
         })
       } else {
         setWalletState({
           isConnected: false,
           isLoading: false,
+          isInjectedWallet: false,
         })
       }
     }

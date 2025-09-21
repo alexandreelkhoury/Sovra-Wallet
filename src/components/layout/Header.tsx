@@ -10,7 +10,7 @@ const Header: React.FC = () => {
   const { login, logout } = usePrivy()
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-14 sm:h-16">
           {/* Logo */}
@@ -18,14 +18,14 @@ const Header: React.FC = () => {
             <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xs sm:text-sm">S</span>
             </div>
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900 hidden xs:block">SOVRA Wallet</h1>
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900 block xs:hidden">SOVRA</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-white hidden xs:block">SOVRA Wallet</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-white block xs:hidden">SOVRA</h1>
           </div>
 
           {/* Network Switcher & Wallet Connection */}
           <div className="flex items-center space-x-2 sm:space-x-4">
-            {/* Network Switcher - Hide on mobile, only show on sm+ screens when connected */}
-            {walletState.isConnected && (
+            {/* Network Switcher - Hide on mobile, only show on sm+ screens when connected with injected wallet */}
+            {walletState.isConnected && walletState.isInjectedWallet && (
               <div className="hidden sm:block">
                 <NetworkSwitcher />
               </div>
@@ -34,15 +34,15 @@ const Header: React.FC = () => {
             {walletState.isConnected ? (
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <div className="text-right hidden sm:block">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-white">
                     {formatAddress(walletState.address || '')}
                   </p>
-                  <p className="text-xs text-gray-500">Connected</p>
+                  <p className="text-xs text-slate-400">Connected</p>
                 </div>
                 
                 {/* Mobile: Just show address, no "Connected" label */}
                 <div className="text-right block sm:hidden">
-                  <p className="text-xs font-medium text-gray-900">
+                  <p className="text-xs font-medium text-white">
                     {formatAddress(walletState.address || '')}
                   </p>
                 </div>

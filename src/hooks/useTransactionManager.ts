@@ -1,21 +1,12 @@
 import { useState, useCallback, useEffect } from 'react'
-import { usePublicClient, useWaitForTransactionReceipt } from 'wagmi'
-import { formatUnits } from 'viem'
+import { useWaitForTransactionReceipt } from 'wagmi'
 import { useToast } from '../components/ui/Toast'
 
 export interface TransactionState {
   isLoading: boolean
   hash?: string
-  status: 'idle' | 'estimating' | 'pending' | 'confirmed' | 'failed'
-  gasEstimate?: string
+  status: 'idle' | 'pending' | 'confirmed' | 'failed'
   error?: string
-}
-
-export interface EstimateGasParams {
-  to: string
-  data: string
-  value?: bigint
-  from: string
 }
 
 export function useTransactionManager() {
@@ -24,8 +15,7 @@ export function useTransactionManager() {
     status: 'idle'
   })
   
-  const publicClient = usePublicClient()
-  const { addToast, updateToast } = useToast()
+  const { addToast } = useToast()
 
   // Wait for transaction receipt when we have a hash
   const { data: receipt } = useWaitForTransactionReceipt({
@@ -37,59 +27,25 @@ export function useTransactionManager() {
     if (receipt && txState.hash) {
       if (receipt.status === 'success') {
         setTxState(prev => ({ ...prev, status: 'confirmed', isLoading: false }))
-        updateToast(txState.hash, {
+        addToast({
           type: 'success',
           title: 'Transaction Confirmed',
           message: 'Your transaction has been confirmed on the blockchain.',
+          txHash: txState.hash,
           duration: 5000
         })
       } else {
         setTxState(prev => ({ ...prev, status: 'failed', isLoading: false }))
-        updateToast(txState.hash, {
+        addToast({
           type: 'error',
           title: 'Transaction Failed',
           message: 'Your transaction failed. Please try again.',
+          txHash: txState.hash,
           duration: 5000
         })
       }
     }
-  }, [receipt, txState.hash, updateToast])
-
-  const estimateGas = useCallback(async (params: EstimateGasParams): Promise<string> => {
-    if (!publicClient) throw new Error('Public client not available')
-
-    setTxState(prev => ({ ...prev, status: 'estimating' }))
-
-    try {
-      const gasEstimate = await publicClient.estimateGas({
-        to: params.to as `0x${string}`,
-        data: params.data as `0x${string}`,
-        value: params.value,
-        account: params.from as `0x${string}`,
-      })
-
-      // Get current gas price
-      const gasPrice = await publicClient.getGasPrice()
-      const estimatedCost = gasEstimate * gasPrice
-      const estimatedCostInEth = formatUnits(estimatedCost, 18)
-
-      setTxState(prev => ({ 
-        ...prev, 
-        gasEstimate: estimatedCostInEth,
-        status: 'idle'
-      }))
-
-      return estimatedCostInEth
-    } catch (error) {
-      console.error('Gas estimation failed:', error)
-      setTxState(prev => ({ 
-        ...prev, 
-        error: 'Failed to estimate gas',
-        status: 'idle'
-      }))
-      throw error
-    }
-  }, [publicClient])
+  }, [receipt, txState.hash, addToast])
 
   const executeTransaction = useCallback(async (
     sendTransaction: () => Promise<{ hash: string }>,
@@ -107,16 +63,13 @@ export function useTransactionManager() {
       }))
 
       // Add pending toast notification
-      const toastId = addToast({
+      addToast({
         type: 'info',
         title: 'Transaction Pending',
         message: `Your ${transactionName} transaction is being processed...`,
         txHash: result.hash,
         duration: 0, // Don't auto-dismiss pending transactions
       })
-
-      // Store toast ID for later updates
-      setTxState(prev => ({ ...prev, hash: toastId }))
 
       return result.hash
     } catch (error: any) {
@@ -166,7 +119,6 @@ export function useTransactionManager() {
 
   return {
     txState,
-    estimateGas,
     executeTransaction,
     reset,
   }

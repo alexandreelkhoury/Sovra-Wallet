@@ -10,6 +10,11 @@ export const privyConfig = {
       createOnLogin: 'users-without-wallets' as const,
       noPromptOnSignature: false,
     },
+    // Smart wallets configuration - enables account abstraction and gas sponsorship
+    smartWallets: {
+      // Smart wallets can be created for all users or only those without existing wallets
+      createOnLogin: 'users-without-wallets' as const,
+    },
     // Appearance customization
     appearance: {
       theme: 'light' as const,
