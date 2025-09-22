@@ -48,7 +48,7 @@ SOVRA Wallet is a production-ready browser-based Web3 wallet implementing **WETH
 - **Embedded wallets** created automatically for users without existing wallets
 - **Pimlico paymaster** provides free gas sponsorship on Base Sepolia testnet
 
-### Blockchain Interaction: Viem + Wagmi
+### Blockchain Interaction: Viem + Wagmi + Aave
 **Decision Rationale:**
 - **Type-safe contract interactions** through Viem's TypeScript ABI support
 - **Real-time balance queries** using Wagmi's React hooks
@@ -83,7 +83,7 @@ const sendTransactionByMode = async (params: TransactionParams) => {
   config={{
     paymasterContext: {
       type: 'paymaster_service',
-      paymasterUrl: 'https://api.pimlico.io/v2/84532/rpc?apikey=pim_4GzrQxLTP4cDUMbXLySeao'
+      paymasterUrl: 'https://api.pimlico.io/v2/84532/rpc?apikey=your-api-key'
     }
   }}
 >
@@ -341,25 +341,9 @@ const paymasterUrl = 'https://api.pimlico.io/v2/84532/rpc?apikey=pim_4GzrQxLTP4c
 ### Environment Configuration
 ```bash
 # Required Environment Variables
-VITE_PRIVY_APP_ID=cmeigbb8q00u5ky0bv70pell5
+VITE_PRIVY_APP_ID=your-app-id
 VITE_BASE_SEPOLIA_RPC=https://sepolia.base.org
 ```
-
-### Mainnet Deployment Checklist
-- [ ] Update Privy app configuration for mainnet networks
-- [ ] Configure Pimlico paymaster with mainnet API key
-- [ ] Fund Pimlico account balance for mainnet gas sponsorship
-- [ ] Update contract addresses for mainnet deployment
-- [ ] Implement transaction fee estimation and spending limits
-- [ ] Add comprehensive monitoring and error tracking
-- [ ] Security audit for production financial operations
-
-### Deployment Features
-- **Static Hosting**: Compatible with Vercel, Netlify, or any static host
-- **CSP Headers**: Structure supports Content Security Policy implementation
-- **Error Monitoring**: Structured logging ready for production monitoring
-- **TypeScript Strict Mode**: Maximum type safety for production reliability
-- **Bundle Optimization**: Vite production builds with tree-shaking
 
 ## Setup Instructions for New Developers
 
