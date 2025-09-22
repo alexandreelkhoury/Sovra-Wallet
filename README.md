@@ -173,7 +173,7 @@ src/
 
 ## Documentation
 
-See [CLAUDE.md](./CLAUDE.md) for comprehensive technical documentation including:
+See [DESIGN_DOCUMENT.md](./DESIGN_DOCUMENT.md) for comprehensive technical documentation including:
 - Detailed technology choices and rationales
 - Key architectural decisions
 - Implementation details and development approach
