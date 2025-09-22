@@ -1,35 +1,97 @@
-import { useAaveMarkets, chainId } from '@aave/react'
+import { useState, useEffect, useCallback } from 'react'
+import { usePublicClient } from 'wagmi'
+import { formatUnits } from 'viem'
+import { CONTRACT_ADDRESSES } from '../config/privy'
+
+// Aave V3 Pool contract ABI for getReserveData
+const AAVE_POOL_ABI = [
+  {
+    inputs: [{ name: 'asset', type: 'address' }],
+    name: 'getReserveData',
+    outputs: [
+      {
+        components: [
+          { name: 'configuration', type: 'uint256' },
+          { name: 'liquidityIndex', type: 'uint128' },
+          { name: 'currentLiquidityRate', type: 'uint128' },
+          { name: 'variableBorrowIndex', type: 'uint128' },
+          { name: 'currentVariableBorrowRate', type: 'uint128' },
+          { name: 'currentStableBorrowRate', type: 'uint128' },
+          { name: 'lastUpdateTimestamp', type: 'uint40' },
+          { name: 'id', type: 'uint16' },
+          { name: 'aTokenAddress', type: 'address' },
+          { name: 'stableDebtTokenAddress', type: 'address' },
+          { name: 'variableDebtTokenAddress', type: 'address' },
+          { name: 'interestRateStrategyAddress', type: 'address' },
+          { name: 'accruedToTreasury', type: 'uint128' },
+          { name: 'unbacked', type: 'uint128' },
+          { name: 'isolationModeTotalDebt', type: 'uint128' }
+        ],
+        name: 'reserveData',
+        type: 'tuple'
+      }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  }
+] as const
 
 export function useAaveAPY() {
-  // Fetch Aave markets for Base Sepolia (chain ID 84532)
-  const { data: markets, loading: isLoading, error } = useAaveMarkets({
-    chainIds: [chainId(84532)], // Base Sepolia
-  })
+  const [apy, setApy] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const publicClient = usePublicClient()
 
-  // Find WETH reserve and extract supply APY
-  // Note: Using supplyReserves instead of reserves based on API structure
-  const wethReserve = markets?.find(market => 
-    market.supplyReserves?.find((reserve: any) => 
-      reserve.symbol === 'WETH' || 
-      reserve.symbol === 'ETH' ||
-      reserve.name?.toLowerCase().includes('ethereum')
-    )
-  )?.supplyReserves?.find((reserve: any) => 
-    reserve.symbol === 'WETH' || 
-    reserve.symbol === 'ETH' ||
-    reserve.name?.toLowerCase().includes('ethereum')
-  )
+  const fetchAPY = useCallback(async () => {
+    if (!publicClient) {
+      console.log('useAaveAPY: No public client available')
+      return
+    }
 
-  // Extract APY from the reserve data
-  // Cast to any to handle dynamic property access
-  const reserveData = wethReserve as any
-  const apy = reserveData?.supplyAPY 
-    ? parseFloat(reserveData.supplyAPY) * 100 // Convert to percentage
-    : reserveData?.supplyRate
-    ? parseFloat(reserveData.supplyRate) * 100
-    : reserveData?.apy
-    ? parseFloat(reserveData.apy) * 100
-    : 3.5 // Fallback to reasonable default for demo
+    console.log('useAaveAPY: Fetching real WETH supply APY from Aave V3')
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Call Aave V3 Pool getReserveData for WETH
+      const reserveData = await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.AAVE_POOL,
+        abi: AAVE_POOL_ABI,
+        functionName: 'getReserveData',
+        args: [CONTRACT_ADDRESSES.WETH],
+      })
+
+      // Extract the current liquidity rate (supply APY)
+      // currentLiquidityRate is in ray units (27 decimal places)
+      const liquidityRateRaw = reserveData.currentLiquidityRate as bigint
+      
+      // Convert from ray (27 decimals) to percentage
+      // Formula: (liquidityRate / 10^27) * 100 to get percentage
+      const liquidityRateDecimal = formatUnits(liquidityRateRaw, 27)
+      const apyPercentage = parseFloat(liquidityRateDecimal) * 100
+
+      console.log('useAaveAPY: Retrieved real APY data', {
+        liquidityRateRaw: liquidityRateRaw.toString(),
+        liquidityRateDecimal,
+        apyPercentage: apyPercentage.toFixed(4)
+      })
+
+      setApy(apyPercentage)
+    } catch (error) {
+      console.error('useAaveAPY: Failed to fetch APY from Aave:', error)
+      setError('Failed to fetch APY data')
+      // Fallback to reasonable default
+      setApy(3.2)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [publicClient])
+
+  useEffect(() => {
+    if (publicClient) {
+      fetchAPY()
+    }
+  }, [publicClient, fetchAPY])
 
   const formatAPY = (value: number | null): string => {
     if (value === null) return '--'
@@ -39,11 +101,8 @@ export function useAaveAPY() {
   return {
     apy,
     isLoading,
-    error: error ? String(error) : null,
+    error,
     formatAPY,
-    refetch: () => {
-      // The Aave hook handles refetching automatically
-      console.log('Aave markets will auto-refresh')
-    }
+    refetch: fetchAPY
   }
 }

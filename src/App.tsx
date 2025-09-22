@@ -28,8 +28,11 @@ function App() {
           >
             <SmartWalletsProvider
               config={{
-                // Enable gas sponsorship - transactions will be sponsored when configured in Privy Dashboard
-                // No additional configuration needed as user enabled gas sponsorship in dashboard
+                // Configure Pimlico paymaster for Base Sepolia sponsored transactions
+                paymasterContext: {
+                  type: 'paymaster_service',
+                  paymasterUrl: 'https://api.pimlico.io/v2/84532/rpc?apikey=pim_4GzrQxLTP4cDUMbXLySeao'
+                }
               }}
             >
               <SimpleWalletProvider>

@@ -8,12 +8,12 @@ export const privyConfig = {
     // Embedded wallets configuration
     embeddedWallets: {
       createOnLogin: 'users-without-wallets' as const,
-      noPromptOnSignature: false,
+      noPromptOnSignature: true,
     },
     // Smart wallets configuration - enables account abstraction and gas sponsorship
     smartWallets: {
-      // Smart wallets can be created for all users or only those without existing wallets
-      createOnLogin: 'users-without-wallets' as const,
+      // Create smart wallets for all users
+      createOnLogin: 'all-users' as const,
     },
     // Appearance customization
     appearance: {

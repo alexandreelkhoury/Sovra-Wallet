@@ -153,18 +153,6 @@ export const SendWETH: React.FC = () => {
           </div>
         )}
 
-        {/* Gasless Transaction Badge */}
-        <div className="bg-green-900/20 border border-green-700 rounded-lg p-3 mb-4">
-          <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            <div>
-              <p className="text-sm font-medium text-green-300">⚡ Gasless Transaction</p>
-              <p className="text-xs text-green-400">No gas fees required - transaction sponsored</p>
-            </div>
-          </div>
-        </div>
 
         {/* Send Button */}
         {!showConfirmation ? (

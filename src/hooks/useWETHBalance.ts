@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useWallets } from '@privy-io/react-auth'
 import { usePublicClient } from 'wagmi'
 import { formatUnits, Address } from 'viem'
 import { CONTRACT_ADDRESSES } from '../config/privy'
+import { useWallet } from '../context/SimpleWalletContext'
 
 // ERC-20 ABI for WETH balance
 const ERC20_ABI = [
@@ -16,15 +16,14 @@ const ERC20_ABI = [
 ] as const
 
 export function useWETHBalance() {
-  const { wallets } = useWallets()
+  const { walletState, walletMode } = useWallet()
   const publicClient = usePublicClient()
   const [balance, setBalance] = useState<string>('0')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Get the active wallet address - prioritize injected wallets (MetaMask, Rabby, etc.) over embedded
-  const activeWallet = wallets.find(wallet => wallet.connectorType === 'injected') || wallets[0]
-  const userAddress = activeWallet?.address
+  // Use the active wallet address from context (switches based on wallet mode)
+  const userAddress = walletState.address
 
   const fetchBalance = useCallback(async () => {
     if (!userAddress || !publicClient) {
@@ -34,7 +33,7 @@ export function useWETHBalance() {
 
     console.log('useWETHBalance: Fetching balance', { 
       userAddress, 
-      walletType: activeWallet?.walletClientType || activeWallet?.connectorType,
+      walletMode,
       chainId: publicClient.chain?.id, 
       chainName: publicClient.chain?.name,
       contractAddress: CONTRACT_ADDRESSES.WETH 
@@ -62,7 +61,7 @@ export function useWETHBalance() {
     } finally {
       setIsLoading(false)
     }
-  }, [userAddress, publicClient, activeWallet])
+  }, [userAddress, publicClient, walletMode])
 
   // Fetch balance when wallet connects
   useEffect(() => {

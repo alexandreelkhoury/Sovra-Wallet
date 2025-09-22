@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import { useWallets } from '@privy-io/react-auth'
-import { useSmartWallets } from '@privy-io/react-auth/smart-wallets'
+import { useState, useCallback } from 'react'
 import { usePublicClient } from 'wagmi'
 import { parseUnits, encodeFunctionData, Address, formatUnits } from 'viem'
 import { CONTRACT_ADDRESSES } from '../config/privy'
 import { useTransactionManager } from './useTransactionManager'
+import { useWallet } from '../context/SimpleWalletContext'
+import { useTransactionSender } from '../utils/transactionUtils'
 
 // ERC-20 ABI for approve
 const ERC20_ABI = [
@@ -55,21 +55,26 @@ const AAVE_POOL_ABI = [
 ] as const
 
 export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
-  const { wallets } = useWallets()
-  const { client: smartWalletClient } = useSmartWallets()
   const publicClient = usePublicClient()
   const { executeTransaction } = useTransactionManager()
+  const { walletMode, walletState } = useWallet()
+  const { sendTransactionByMode, useSmartWallet, activeWallet } = useTransactionSender()
   const [isSupplying, setIsSupplying] = useState(false)
   const [isWithdrawing, setIsWithdrawing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Get the active wallet address - prioritize injected wallets (MetaMask, Rabby, etc.) over embedded
-  const activeWallet = wallets.find(wallet => wallet.connectorType === 'injected') || wallets[0]
-  const userAddress = activeWallet?.address as Address
+  // Get the active wallet address from context (switches based on wallet mode)
+  const userAddress = walletState.address as Address
 
   // Get user's supplied WETH balance from aWETH token
-  const getSuppliedBalance = async (): Promise<string> => {
+  const getSuppliedBalance = useCallback(async (): Promise<string> => {
     if (!userAddress || !publicClient) return '0'
+
+    console.log('getSuppliedBalance: Fetching aWETH balance', {
+      userAddress,
+      walletMode,
+      contractAddress: CONTRACT_ADDRESSES.A_WETH
+    })
 
     try {
       const balance = await publicClient.readContract({
@@ -80,12 +85,18 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
       })
 
       // aWETH has 18 decimals like WETH
-      return formatUnits(balance as bigint, 18)
+      const formattedBalance = formatUnits(balance as bigint, 18)
+      console.log('getSuppliedBalance: aWETH balance fetched', {
+        userAddress,
+        walletMode,
+        balance: formattedBalance
+      })
+      return formattedBalance
     } catch (error) {
       console.error('Failed to get supplied WETH balance:', error)
       return '0'
     }
-  }
+  }, [userAddress, publicClient, walletMode])
 
   const supplyWETH = async (amount: string) => {
     if (!userAddress || !amount || parseFloat(amount) <= 0 || !activeWallet) {
@@ -102,11 +113,13 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
       console.log('Using wallet for Aave WETH operations:', {
         address: activeWallet.address,
         type: activeWallet.walletClientType,
-        connectorType: activeWallet.connectorType
+        connectorType: activeWallet.connectorType,
+        demoMode: walletMode,
+        useSmartWallet: useSmartWallet
       })
 
       // Step 1: Approve WETH to Aave Pool
-      console.log('Approving WETH with smart wallet (gasless)...')
+      console.log(`Approving WETH with ${useSmartWallet ? 'smart wallet' : 'normal wallet'}...`)
       const approveData = encodeFunctionData({
         abi: ERC20_ABI,
         functionName: 'approve',
@@ -115,16 +128,12 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
 
       const approveTxHash = await executeTransaction(
         async () => {
-          if (!smartWalletClient) {
-            throw new Error('Smart wallet client not available')
-          }
-          const hash = await smartWalletClient.sendTransaction({
+          return await sendTransactionByMode({
             to: CONTRACT_ADDRESSES.WETH,
             data: approveData,
           })
-          return { hash }
         },
-        'WETH approval (gasless)'
+        `WETH approval (${useSmartWallet ? 'smart wallet' : 'normal wallet'})`
       )
 
       console.log('Approval transaction:', approveTxHash)
@@ -133,7 +142,7 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
       await new Promise(resolve => setTimeout(resolve, 3000))
 
       // Step 2: Supply WETH to Aave
-      console.log('Supplying WETH to Aave with smart wallet (gasless)...')
+      console.log(`Supplying WETH to Aave with ${useSmartWallet ? 'smart wallet' : 'normal wallet'}...`)
       const supplyData = encodeFunctionData({
         abi: AAVE_POOL_ABI,
         functionName: 'supply',
@@ -142,16 +151,12 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
 
       const supplyTxHash = await executeTransaction(
         async () => {
-          if (!smartWalletClient) {
-            throw new Error('Smart wallet client not available')
-          }
-          const hash = await smartWalletClient.sendTransaction({
+          return await sendTransactionByMode({
             to: CONTRACT_ADDRESSES.AAVE_POOL,
             data: supplyData,
           })
-          return { hash }
         },
-        'WETH supply to Aave (gasless)'
+        `WETH supply to Aave (${useSmartWallet ? 'smart wallet' : 'normal wallet'})`
       )
 
       console.log('Supply transaction:', supplyTxHash)
@@ -208,16 +213,12 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
 
       const withdrawTxHash = await executeTransaction(
         async () => {
-          if (!smartWalletClient) {
-            throw new Error('Smart wallet client not available')
-          }
-          const hash = await smartWalletClient.sendTransaction({
+          return await sendTransactionByMode({
             to: CONTRACT_ADDRESSES.AAVE_POOL,
             data: withdrawData,
           })
-          return { hash }
         },
-        'WETH withdrawal from Aave (gasless)'
+        `WETH withdrawal from Aave (${useSmartWallet ? 'smart wallet' : 'normal wallet'})`
       )
 
       console.log('Withdraw transaction:', withdrawTxHash)
