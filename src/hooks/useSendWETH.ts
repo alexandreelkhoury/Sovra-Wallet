@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useWallets } from '@privy-io/react-auth'
-import { useSmartWallets } from '@privy-io/react-auth/smart-wallets'
 import { parseUnits, encodeFunctionData, Address, isAddress } from 'viem'
 import { CONTRACT_ADDRESSES } from '../config/privy'
 import { useTransactionManager } from './useTransactionManager'
+import { useWallet } from '../context/SimpleWalletContext'
+import { useTransactionSender } from '../utils/transactionUtils'
 
 // ERC-20 ABI for transfer
 const ERC20_ABI = [
@@ -20,15 +20,14 @@ const ERC20_ABI = [
 ] as const
 
 export function useSendWETH(onBalanceUpdate?: () => void) {
-  const { wallets } = useWallets()
-  const { client: smartWalletClient } = useSmartWallets()
   const { executeTransaction } = useTransactionManager()
+  const { walletMode, walletState } = useWallet()
+  const { sendTransactionByMode, useSmartWallet, activeWallet } = useTransactionSender()
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Get the active wallet address - prioritize injected wallets (MetaMask, Rabby, etc.) over embedded
-  const activeWallet = wallets.find(wallet => wallet.connectorType === 'injected') || wallets[0]
-  const userAddress = activeWallet?.address as Address
+  // Use the active wallet address from context (switches based on wallet mode)
+  const userAddress = walletState.address as Address
 
   const sendWETH = async (recipientAddress: string, amount: string) => {
     if (!userAddress || !amount || parseFloat(amount) <= 0 || !activeWallet) {
@@ -59,6 +58,8 @@ export function useSendWETH(onBalanceUpdate?: () => void) {
         to: recipientAddress,
         amount: amount,
         amountWei: amountWei.toString(),
+        walletMode,
+        useSmartWallet,
         wallet: {
           address: activeWallet.address,
           type: activeWallet.walletClientType,
@@ -73,19 +74,15 @@ export function useSendWETH(onBalanceUpdate?: () => void) {
         args: [recipientAddress as Address, amountWei]
       })
 
-      // Execute the transfer transaction with smart wallet (gasless)
+      // Execute the transfer transaction based on wallet mode
       const txHash = await executeTransaction(
         async () => {
-          if (!smartWalletClient) {
-            throw new Error('Smart wallet client not available')
-          }
-          const hash = await smartWalletClient.sendTransaction({
+          return await sendTransactionByMode({
             to: CONTRACT_ADDRESSES.WETH,
             data: transferData,
           })
-          return { hash }
         },
-        `WETH transfer to ${recipientAddress.slice(0, 6)}...${recipientAddress.slice(-4)} (gasless)`
+        `WETH transfer to ${recipientAddress.slice(0, 6)}...${recipientAddress.slice(-4)} (${useSmartWallet ? 'smart wallet' : 'normal wallet'})`
       )
 
       console.log('Transfer transaction hash:', txHash)

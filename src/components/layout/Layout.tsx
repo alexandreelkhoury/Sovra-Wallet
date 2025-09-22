@@ -6,6 +6,7 @@ import { AaveWETHLending } from '../aave/AaveWETHLending'
 import { SendWETH } from '../wallet/SendWETH'
 import { ReceiveWETH } from '../wallet/ReceiveWETH'
 import { useWallet } from '../../context/SimpleWalletContext'
+import { WalletModeToggle } from '../demo/WalletModeToggle'
 
 const Layout: React.FC = () => {
   const { walletState } = useWallet()
@@ -35,6 +36,9 @@ const Layout: React.FC = () => {
 
         {walletState.isConnected ? (
           <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
+            {/* Demo Mode Toggle */}
+            <WalletModeToggle />
+            
             {/* WETH Balance */}
             <WETHBalance />
             

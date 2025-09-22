@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { useAaveWETHOperations } from '../../hooks/useAaveWETHOperations'
 import { useWETHBalanceContext } from '../../context/WETHBalanceContext'
 import { useAaveAPY } from '../../hooks/useAaveAPY'
+import { useWallet } from '../../context/SimpleWalletContext'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 
 export const AaveWETHLending: React.FC = () => {
   const { balance: walletBalance, refetch: refetchWalletBalance } = useWETHBalanceContext()
   const { supplyWETH, withdrawWETH, getSuppliedBalance, isSupplying, isWithdrawing, error } = useAaveWETHOperations(refetchWalletBalance)
   const { apy, formatAPY, isLoading: isAPYLoading } = useAaveAPY()
+  const { walletMode, useSmartWallet } = useWallet()
   const [amount, setAmount] = useState('')
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [suppliedBalance, setSuppliedBalance] = useState('0')
@@ -28,7 +30,7 @@ export const AaveWETHLending: React.FC = () => {
 
   useEffect(() => {
     fetchSuppliedBalance()
-  }, [])
+  }, [walletMode, useSmartWallet, getSuppliedBalance]) // Refetch when wallet mode changes
 
   const handleSupply = async () => {
     if (!amount || parseFloat(amount) <= 0) return
@@ -116,18 +118,20 @@ export const AaveWETHLending: React.FC = () => {
         </div>
       </div>
 
-      {/* Gasless Transaction Badge */}
-      <div className="bg-green-900/20 border border-green-700 rounded-lg p-3 mb-4">
-        <div className="flex items-center space-x-2">
-          <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          <div>
-            <p className="text-sm font-medium text-green-300">⚡ Gasless Transactions</p>
-            <p className="text-xs text-green-400">All supply and withdraw operations are sponsored</p>
+      {/* Sponsored Transaction Badge - Only show for smart wallet mode */}
+      {useSmartWallet && (
+        <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-3 mb-4">
+          <div className="flex items-center space-x-2">
+            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+            </svg>
+            <div>
+              <p className="text-sm font-medium text-blue-300">💳 Sponsored Transactions</p>
+              <p className="text-xs text-blue-400">All supply and withdraw operations sponsored by Pimlico</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Supply Section */}
       <div className="space-y-4 mb-6">
@@ -251,8 +255,6 @@ export const AaveWETHLending: React.FC = () => {
           <li>• Supply WETH to earn interest on Aave</li>
           <li>• Your WETH is converted to aWETH tokens</li>
           <li>• Withdraw anytime to get your WETH back</li>
-          <li>• ⚡ All transactions are gasless (sponsored) - no fees!</li>
-          <li>• All transactions use your connected wallet (Rabby/MetaMask)</li>
         </ul>
       </div>
     </div>

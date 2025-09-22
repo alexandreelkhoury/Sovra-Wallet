@@ -1,32 +1,8 @@
-# SOVRA Technical Assessment – Browser-Based Wallet
+# SOVRA Wallet - Complete WETH Wallet with Gasless Transactions
 
-## Requirements
-In this assessment, we expect you to build a simple Web3 wallet using standard Web2 technologies for browser based access. The wallet should allow a user to:
-● View their USDT balance
-● Supply a specified amount of USDT to Aave's lending pool
+✅ **Project Status: COMPLETED**
 
-Note that all blockchain interactions must be routed through PortalHQ as the exclusive interface. We are ready to provide you the needed access to the PortalHQ testing sandbox.
-
-## Deliverables
-We expect the following deliverables for the assessment:
-● A functional prototype to be demonstrated locally
-● Complete source code to be shown over screen sharing or live walkthrough
-● A concise design document for external audiences (to be submitted) covering:
-○ Technology choices
-○ Key architectural decisions
-
-## Process details​
-We will be employing the following process:
-- You can send any question or requirements you might need to ahmad@sovra.finance
-- You can expect an answer within 1-2 working days
-- You are expected to be ready with the deliverables within 10 days of you receiving this brief
-- You are expected to submit the design document by email (should you wish to submit your source code, we are open to receiving it, albeit not required)
-- Once shared, we will reach out to set up an interview which will cover:
-- Demo of the prototype
-- Code walkthrough over screen share
-- Detailed discussion of technical choices
-
----
+A production-ready Web3 wallet featuring WETH balance management, Aave V3 lending integration, and gasless transactions through Privy smart wallets with Pimlico paymaster sponsorship.
 
 ## Project Setup & Implementation
 
@@ -34,8 +10,10 @@ We will be employing the following process:
 - **React 18 + TypeScript** - Type-safe component architecture
 - **Tailwind CSS** - Utility-first styling for responsive design
 - **Vite** - Fast development and optimized builds
-- **React Context** - Lightweight state management
-- **PortalHQ SDK** - Real blockchain interface for Base Sepolia
+- **Privy + Smart Wallets** - Authentication with account abstraction
+- **Pimlico Paymaster** - Gasless transaction sponsorship
+- **Viem + Wagmi** - Type-safe blockchain interactions
+- **Base Sepolia** - Production testnet deployment
 
 ### Quick Start
 
@@ -44,10 +22,11 @@ We will be employing the following process:
    npm install
    ```
 
-2. **Configure PortalHQ API Key** (Required)
+2. **Configure Environment** (Required)
    ```bash
-   # Edit .env with your PortalHQ sandbox API key
-   VITE_PORTALHQ_API_KEY=your-actual-portalhq-api-key-here
+   # Create .env.local with Privy configuration
+   VITE_PRIVY_APP_ID=your-privy-app-id-here
+   VITE_BASE_SEPOLIA_RPC=https://sepolia.base.org
    ```
 
 3. **Start Development Server**
@@ -60,97 +39,135 @@ We will be employing the following process:
    npm run build
    ```
 
-### PortalHQ Integration Setup
+### 🚀 Gasless Transactions Setup
 
-This application is designed to work with **PortalHQ's testing sandbox on Base Sepolia**. To get it working:
+The application features **dual wallet modes** with Pimlico-sponsored gasless transactions:
 
-1. **Get PortalHQ API Key**: Contact ahmad@sovra.finance for PortalHQ sandbox access
-2. **Update .env**: Replace `your-portalhq-api-key-here` with your actual API key
-3. **Test on Base Sepolia**: The app will connect to Base Sepolia testnet (Chain ID: 84532)
+**Smart Wallet Mode (Gasless)**:
+- All transactions sponsored by Pimlico paymaster
+- Users pay $0 in gas fees
+- Account abstraction with enhanced security
 
-### Real Blockchain Integration
+**Normal Wallet Mode (Traditional)**:
+- User pays gas fees with their EOA wallet
+- Works with MetaMask, Rabby, and other injected wallets
+- Standard Web3 transaction model
 
-✅ **Base Sepolia Network**: Configured for Base Sepolia testnet
-✅ **Real USDT Contract**: `0xf46318aa5d26a20683ae2390ea2777efc22cf89f`
-✅ **Real Aave V3 Pool**: `0x8bAB6d1b75f19e9eD9fCe8b9BD338844fF79aE27`
-✅ **PortalHQ SDK**: Real SDK integration with proper transaction signing
+### 🔗 Blockchain Integration
 
-### Features Implemented
+✅ **Base Sepolia Network**: Chain ID 84532
+✅ **WETH Contract**: `0x4200000000000000000000000000000000000006` (Native WETH)
+✅ **Aave V3 Pool**: `0x8bAB6d1b75f19e9eD9fCe8b9BD338844fF79aE27`
+✅ **aWETH Token**: `0x73a5bB60b0B0fc35710DDc0ea9c407031E31Bdbb` (Interest-bearing)
+✅ **Pimlico Paymaster**: Free testnet gas sponsorship
+✅ **Smart Wallets**: Automatic creation with account abstraction
 
-✅ **USDT Balance Display**
-- Real-time balance viewing
-- Refresh functionality
-- Error handling
+### ✨ Features Completed
 
-✅ **Aave Lending Integration**
-- Supply USDT to Aave lending pools
-- Withdraw/unstake all USDT from Aave (one-click)
-- Transaction status monitoring
-- Position tracking with APY and health factor
+✅ **WETH Wallet Management**
+- Real-time WETH balance display
+- Send WETH to any address
+- Receive WETH with QR code
+- Transaction history and status
 
-✅ **PortalHQ Integration**
-- Service layer architecture for easy SDK integration
-- Mock implementation for demo purposes
-- Ready for production PortalHQ credentials
+✅ **Gasless Transactions**
+- Smart wallet mode with Pimlico sponsorship
+- Toggle between gasless and traditional modes
+- Free transactions on Base Sepolia testnet
+- Account abstraction benefits
 
-✅ **Responsive Design**
-- Mobile-first responsive layout
-- Touch-friendly interface
-- Cross-device compatibility
+✅ **Aave V3 Integration**
+- Supply WETH to Aave lending pools
+- Withdraw WETH from Aave positions
+- Real-time APY and position tracking
+- Two-transaction approval flow
 
-✅ **Error Handling**
-- Comprehensive error boundaries
-- User-friendly error messages
-- Loading states throughout
+✅ **Authentication & Wallets**
+- Privy authentication (email, social, wallet)
+- Support for MetaMask, Rabby, and injected wallets
+- Automatic smart wallet creation
+- Seamless wallet switching
 
-### Architecture Overview
+✅ **User Experience**
+- Mobile-first responsive design
+- Real-time balance updates
+- Comprehensive error handling
+- Loading states and transaction feedback
+
+### 🏗️ Architecture Overview
 
 ```
 src/
 ├── components/
-│   ├── ui/           # Reusable UI components (Button, Card, Input)
-│   ├── wallet/       # USDT balance display
-│   ├── aave/         # Aave lending interface
-│   └── layout/       # App layout and navigation
-├── context/          # React Context for state management
-├── hooks/            # Custom React hooks
-├── services/
-│   ├── portalHQ/     # PortalHQ SDK integration
-│   ├── usdt/         # USDT-specific operations
-│   └── aave/         # Aave lending operations
-├── types/            # TypeScript definitions
-└── utils/            # Helper functions
+│   ├── ui/           # Reusable components (Button, LoadingSpinner, Toast)
+│   ├── wallet/       # WETH balance, send/receive functionality
+│   ├── aave/         # Aave V3 lending interface
+│   ├── demo/         # Wallet mode toggle, demo components
+│   └── layout/       # App layout, header, navigation
+├── context/          # Wallet state and WETH balance management
+├── hooks/            # Custom hooks for WETH, Aave, transactions
+├── config/           # Privy and Wagmi configuration
+├── utils/            # Transaction utilities, formatters
+└── polyfills.ts      # Buffer polyfill for browser compatibility
 ```
 
-### Demo Features
+### 🎯 Key Implementation Highlights
 
-The application includes mock data and functionality for demonstration:
-- **Mock USDT Balance**: $1,250.50
-- **Mock Aave Position**: Supplied amount, APY, and health factor
-- **Realistic Loading States**: Simulated API delays
-- **Error Scenarios**: Comprehensive error handling demonstrations
+**Dual Wallet Architecture**:
+- Smart wallet with Pimlico-sponsored transactions
+- Normal wallet with user-paid gas fees
+- Seamless switching between modes
 
-### Integration Notes
+**Real Blockchain Operations**:
+- Live WETH contract interactions on Base Sepolia
+- Functional Aave V3 supply/withdraw operations
+- Real-time balance and position tracking
 
-**For Production Integration:**
-1. Replace mock PortalHQ implementation with actual SDK
-2. Update environment variables with real API credentials
-3. Configure proper error handling for production scenarios
-4. Add transaction history and notification features
+**Production-Ready Features**:
+- Comprehensive error handling and validation
+- Mobile-optimized responsive design
+- Type-safe contract interactions with Viem
 
-### Performance Optimizations
+### 🚀 Ready for Production
 
-- **Bundle Size**: ~159KB gzipped (lightweight implementation)
-- **Loading Performance**: Optimized with Vite and code splitting
-- **Responsive Design**: Mobile-first approach for better performance
-- **Error Boundaries**: Prevent crashes and improve user experience
+**Mainnet Deployment Checklist**:
+1. Update Privy app configuration for mainnet
+2. Configure Pimlico paymaster with mainnet API key
+3. Fund Pimlico account for mainnet gas sponsorship
+4. Update contract addresses for mainnet deployment
+5. Implement transaction fee estimation and limits
 
-### Security Considerations
+### ⚡ Performance & Security
 
-- Environment variable management for API keys
-- Input validation for transaction amounts
-- No client-side private key storage (handled by PortalHQ)
-- Comprehensive error handling without exposing sensitive information
+**Optimizations**:
+- Lightweight React hooks for blockchain interactions
+- Efficient state management with React Context
+- Optimized bundle with Vite and tree-shaking
+- Mobile-first responsive design
+
+**Security Features**:
+- Account abstraction eliminates seed phrase management
+- Input validation for all transaction parameters
+- No private key storage (handled by Privy)
+- Secure transaction simulation before execution
+
+### 🔧 Testing & Validation
+
+**Successful Test Results**:
+✅ WETH balance display and refresh
+✅ Send WETH transactions (both wallet modes)
+✅ Aave supply operations with two-transaction flow
+✅ Aave withdraw operations
+✅ Real-time balance updates
+✅ Gasless transaction sponsorship
+✅ Wallet mode switching
+✅ Error handling and edge cases
+
+**Test with WETH on Base Sepolia**:
+1. Get Base Sepolia ETH from faucet
+2. Wrap ETH to WETH using the app
+3. Test supply/withdraw operations with Aave
+4. Experience gasless transactions in smart wallet mode
 
 ---
 
@@ -159,5 +176,4 @@ The application includes mock data and functionality for demonstration:
 See [CLAUDE.md](./CLAUDE.md) for comprehensive technical documentation including:
 - Detailed technology choices and rationales
 - Key architectural decisions
-- PortalHQ integration strategy
 - Implementation details and development approach

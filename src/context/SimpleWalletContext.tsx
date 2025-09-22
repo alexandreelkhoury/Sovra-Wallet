@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { usePrivy, useWallets } from '@privy-io/react-auth'
+import { useSmartWallets } from '@privy-io/react-auth/smart-wallets'
+
+type WalletMode = 'normal' | 'smart'
 
 interface SimpleWalletState {
   isConnected: boolean
@@ -10,6 +13,10 @@ interface SimpleWalletState {
 
 interface SimpleWalletContextType {
   walletState: SimpleWalletState
+  walletMode: WalletMode
+  setWalletMode: (mode: WalletMode) => void
+  isSmartWalletAvailable: boolean
+  useSmartWallet: boolean
 }
 
 const SimpleWalletContext = createContext<SimpleWalletContextType | undefined>(undefined)
@@ -27,8 +34,9 @@ interface SimpleWalletProviderProps {
 }
 
 export const SimpleWalletProvider: React.FC<SimpleWalletProviderProps> = ({ children }) => {
-  const { ready, authenticated } = usePrivy()
+  const { ready, authenticated, user } = usePrivy()
   const { wallets } = useWallets()
+  const { client: smartWalletClient } = useSmartWallets()
   
   const [walletState, setWalletState] = useState<SimpleWalletState>({
     isConnected: false,
@@ -36,18 +44,52 @@ export const SimpleWalletProvider: React.FC<SimpleWalletProviderProps> = ({ chil
     isInjectedWallet: false,
   })
 
+  // Check if smart wallet is available
+  const smartWallet = user?.linkedAccounts?.find((account) => account.type === 'smart_wallet')
+  const isSmartWalletAvailable = authenticated && !!smartWallet && !!smartWalletClient
+  
+  // Start with smart wallet if available, otherwise normal
+  const [walletMode, setWalletMode] = useState<WalletMode>(
+    isSmartWalletAvailable ? 'smart' : 'normal'
+  )
+  
+  // Determine if we should use smart wallet
+  const useSmartWallet = walletMode === 'smart' && isSmartWalletAvailable
+
+  const handleSetWalletMode = (mode: WalletMode) => {
+    setWalletMode(mode)
+    console.log(`Demo mode switched to: ${mode === 'smart' ? 'Smart Wallet' : 'Normal Wallet'}`)
+  }
+
   useEffect(() => {
-    console.log('SimpleWalletProvider effect:', { ready, authenticated, walletsCount: wallets.length })
+    console.log('SimpleWalletProvider effect:', { 
+      ready, 
+      authenticated, 
+      walletsCount: wallets.length, 
+      walletMode, 
+      useSmartWallet,
+      smartWalletAddress: smartWallet?.address
+    })
 
     if (ready) {
       if (authenticated && wallets.length > 0) {
-        // Prioritize injected wallets (Rabby, MetaMask, etc.) over embedded
-        const activeWallet = wallets.find(wallet => wallet.connectorType === 'injected') || wallets[0]
-        const isInjected = activeWallet.connectorType === 'injected'
+        let activeAddress: string
+        let isInjected: boolean
+
+        if (useSmartWallet && smartWallet) {
+          // Use smart wallet address when in smart wallet mode
+          activeAddress = smartWallet.address
+          isInjected = false // Smart wallet is not injected
+        } else {
+          // Use regular wallet in normal mode
+          const activeWallet = wallets.find(wallet => wallet.connectorType === 'injected') || wallets[0]
+          activeAddress = activeWallet.address
+          isInjected = activeWallet.connectorType === 'injected'
+        }
         
         setWalletState({
           isConnected: true,
-          address: activeWallet.address,
+          address: activeAddress,
           isLoading: false,
           isInjectedWallet: isInjected,
         })
@@ -59,10 +101,16 @@ export const SimpleWalletProvider: React.FC<SimpleWalletProviderProps> = ({ chil
         })
       }
     }
-  }, [ready, authenticated, wallets])
+  }, [ready, authenticated, wallets, walletMode, useSmartWallet, user, smartWallet])
 
   return (
-    <SimpleWalletContext.Provider value={{ walletState }}>
+    <SimpleWalletContext.Provider value={{ 
+      walletState, 
+      walletMode, 
+      setWalletMode: handleSetWalletMode, 
+      isSmartWalletAvailable, 
+      useSmartWallet 
+    }}>
       {children}
     </SimpleWalletContext.Provider>
   )
