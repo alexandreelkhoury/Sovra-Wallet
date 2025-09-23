@@ -1,6 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
-import { usePublicClient } from 'wagmi'
-import { formatUnits } from 'viem'
+import { useReadContract } from 'wagmi'
 import { CONTRACT_ADDRESSES } from '../config/privy'
 
 // Aave V3 Pool contract ABI for getReserveData
@@ -37,61 +35,49 @@ const AAVE_POOL_ABI = [
 ] as const
 
 export function useAaveAPY() {
-  const [apy, setApy] = useState<number | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const publicClient = usePublicClient()
-
-  const fetchAPY = useCallback(async () => {
-    if (!publicClient) {
-      console.log('useAaveAPY: No public client available')
-      return
+  const { 
+    data: reserveData, 
+    isLoading, 
+    error: contractError, 
+    refetch 
+  } = useReadContract({
+    address: CONTRACT_ADDRESSES.AAVE_POOL,
+    abi: AAVE_POOL_ABI,
+    functionName: 'getReserveData',
+    args: [CONTRACT_ADDRESSES.WETH],
+    query: {
+      staleTime: 60_000, // Cache for 1 minute
+      refetchOnWindowFocus: false,
     }
+  })
 
-    console.log('useAaveAPY: Fetching real WETH supply APY from Aave V3')
-    setIsLoading(true)
-    setError(null)
-
+  // Process the data to calculate APY
+  const apy = reserveData ? (() => {
     try {
-      // Call Aave V3 Pool getReserveData for WETH
-      const reserveData = await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.AAVE_POOL,
-        abi: AAVE_POOL_ABI,
-        functionName: 'getReserveData',
-        args: [CONTRACT_ADDRESSES.WETH],
-      })
-
-      // Extract the current liquidity rate (supply APY)
+      // Extract the current liquidity rate (supply rate per second)
       // currentLiquidityRate is in ray units (27 decimal places)
       const liquidityRateRaw = reserveData.currentLiquidityRate as bigint
       
-      // Convert from ray (27 decimals) to percentage
-      // Formula: (liquidityRate / 10^27) * 100 to get percentage
-      const liquidityRateDecimal = formatUnits(liquidityRateRaw, 27)
-      const apyPercentage = parseFloat(liquidityRateDecimal) * 100
+      // Aave APY calculation constants
+      const RAY = BigInt(10) ** BigInt(27) // 10^27
+      const SECONDS_PER_YEAR = 31536000 // 365 * 24 * 60 * 60
+      
+      // Convert from RAY units to decimal APR
+      const liquidityRateDecimal = Number(liquidityRateRaw) / Number(RAY)
+      
+      // Calculate APY using compound interest formula
+      // APY = ((1 + (APR / SECONDS_PER_YEAR)) ^ SECONDS_PER_YEAR) - 1
+      const ratePerSecond = liquidityRateDecimal / SECONDS_PER_YEAR
+      const compoundedRate = Math.pow(1 + ratePerSecond, SECONDS_PER_YEAR)
+      const apyDecimal = compoundedRate - 1
+      const apyPercentage = apyDecimal * 100
 
-      console.log('useAaveAPY: Retrieved real APY data', {
-        liquidityRateRaw: liquidityRateRaw.toString(),
-        liquidityRateDecimal,
-        apyPercentage: apyPercentage.toFixed(4)
-      })
-
-      setApy(apyPercentage)
+      return apyPercentage
     } catch (error) {
-      console.error('useAaveAPY: Failed to fetch APY from Aave:', error)
-      setError('Failed to fetch APY data')
-      // Fallback to reasonable default
-      setApy(3.2)
-    } finally {
-      setIsLoading(false)
+      console.error('useAaveAPY: Failed to process APY data:', error)
+      return 3.2 // Fallback default
     }
-  }, [publicClient])
-
-  useEffect(() => {
-    if (publicClient) {
-      fetchAPY()
-    }
-  }, [publicClient, fetchAPY])
+  })() : null
 
   const formatAPY = (value: number | null): string => {
     if (value === null) return '--'
@@ -101,8 +87,8 @@ export function useAaveAPY() {
   return {
     apy,
     isLoading,
-    error,
+    error: contractError?.message || null,
     formatAPY,
-    refetch: fetchAPY
+    refetch
   }
 }
