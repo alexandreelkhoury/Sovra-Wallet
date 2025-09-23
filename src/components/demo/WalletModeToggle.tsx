@@ -1,5 +1,5 @@
 import React from 'react'
-import { useWallet } from '../../context/SimpleWalletContext'
+import { useWallet } from '../../context/SimpleWalletProvider'
 
 export const WalletModeToggle: React.FC = () => {
   const { walletMode, setWalletMode, isSmartWalletAvailable } = useWallet()

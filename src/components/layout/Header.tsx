@@ -1,7 +1,7 @@
 import React from 'react'
 import Button from '../ui/Button'
 import { NetworkSwitcher } from '../ui/NetworkSwitcher'
-import { useWallet } from '../../context/SimpleWalletContext'
+import { useWallet } from '../../context/SimpleWalletProvider'
 import { usePrivy } from '@privy-io/react-auth'
 import { formatAddress } from '../../utils/formatters'
 

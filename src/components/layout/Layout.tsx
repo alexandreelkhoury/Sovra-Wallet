@@ -5,7 +5,7 @@ import { WETHBalance } from '../wallet/WETHBalance'
 import { AaveWETHLending } from '../aave/AaveWETHLending'
 import { SendWETH } from '../wallet/SendWETH'
 import { ReceiveWETH } from '../wallet/ReceiveWETH'
-import { useWallet } from '../../context/SimpleWalletContext'
+import { useWallet } from '../../context/SimpleWalletProvider'
 import { WalletModeToggle } from '../demo/WalletModeToggle'
 
 const Layout: React.FC = () => {

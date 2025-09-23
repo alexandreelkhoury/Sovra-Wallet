@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
-import { usePublicClient } from 'wagmi'
+import { useReadContract } from 'wagmi'
 import { formatUnits, Address } from 'viem'
 import { CONTRACT_ADDRESSES } from '../config/privy'
-import { useWallet } from '../context/SimpleWalletContext'
+import { useWallet } from '../context/SimpleWalletProvider'
 
 // ERC-20 ABI for WETH balance
 const ERC20_ABI = [
@@ -16,73 +15,33 @@ const ERC20_ABI = [
 ] as const
 
 export function useWETHBalance() {
-  const { walletState, walletMode } = useWallet()
-  const publicClient = usePublicClient()
-  const [balance, setBalance] = useState<string>('0')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // Use the active wallet address from context (switches based on wallet mode)
+  const { walletState } = useWallet()
   const userAddress = walletState.address
 
-  const fetchBalance = useCallback(async () => {
-    if (!userAddress || !publicClient) {
-      console.log('useWETHBalance: Missing requirements', { userAddress: !!userAddress, publicClient: !!publicClient })
-      return
+  const { 
+    data: rawBalance, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useReadContract({
+    address: CONTRACT_ADDRESSES.WETH,
+    abi: ERC20_ABI,
+    functionName: 'balanceOf',
+    args: userAddress ? [userAddress as Address] : undefined,
+    query: {
+      enabled: !!userAddress,
+      staleTime: 30_000, // Cache for 30 seconds
+      refetchOnWindowFocus: false, // Don't refetch when window regains focus
     }
+  })
 
-    console.log('useWETHBalance: Fetching balance', { 
-      userAddress, 
-      walletMode,
-      chainId: publicClient.chain?.id, 
-      chainName: publicClient.chain?.name,
-      contractAddress: CONTRACT_ADDRESSES.WETH 
-    })
-
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const balance = await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.WETH,
-        abi: ERC20_ABI,
-        functionName: 'balanceOf',
-        args: [userAddress as Address],
-      })
-
-      // WETH has 18 decimals
-      const formattedBalance = formatUnits(balance as bigint, 18)
-      console.log('useWETHBalance: Successfully fetched balance', { balance: formattedBalance, rawBalance: (balance as bigint).toString() })
-      setBalance(formattedBalance)
-    } catch (error) {
-      console.error('useWETHBalance: Failed to fetch WETH balance:', error)
-      setError('Failed to fetch WETH balance')
-      setBalance('0')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [userAddress, publicClient, walletMode])
-
-  // Fetch balance when wallet connects
-  useEffect(() => {
-    console.log('useWETHBalance: useEffect triggered', { 
-      userAddress: !!userAddress, 
-      publicClient: !!publicClient,
-      chainId: publicClient?.chain?.id 
-    })
-    if (userAddress && publicClient) {
-      fetchBalance()
-    }
-  }, [userAddress, publicClient, fetchBalance])
-
-  const refetch = useCallback(() => {
-    fetchBalance()
-  }, [fetchBalance])
+  // Format the balance from Wei to readable format
+  const balance = rawBalance ? formatUnits(rawBalance as bigint, 18) : '0'
 
   return {
     balance,
     isLoading,
-    error,
+    error: error?.message || null,
     refetch,
     userAddress: userAddress as Address | undefined
   }

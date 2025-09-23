@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useAaveWETHOperations } from '../../hooks/useAaveWETHOperations'
-import { useWETHBalanceContext } from '../../context/WETHBalanceContext'
+import { useWETHBalanceContext } from '../../context/WETHBalanceProvider'
 import { useAaveAPY } from '../../hooks/useAaveAPY'
-import { useWallet } from '../../context/SimpleWalletContext'
+import { useWallet } from '../../context/SimpleWalletProvider'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 
 export const AaveWETHLending: React.FC = () => {

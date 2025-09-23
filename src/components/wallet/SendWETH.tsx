@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useWETHBalanceContext } from '../../context/WETHBalanceContext'
+import { useWETHBalanceContext } from '../../context/WETHBalanceProvider'
 import { useSendWETH } from '../../hooks/useSendWETH'
 import { useToast } from '../ui/Toast'
 import { LoadingSpinner } from '../ui/LoadingSpinner'

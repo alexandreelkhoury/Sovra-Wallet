@@ -6,7 +6,6 @@ interface WETHBalanceContextType {
   isLoading: boolean
   error: string | null
   refetch: () => void
-  userAddress?: string
 }
 
 const WETHBalanceContext = createContext<WETHBalanceContextType | null>(null)

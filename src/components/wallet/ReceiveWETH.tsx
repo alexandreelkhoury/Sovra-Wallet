@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useWallet } from '../../context/SimpleWalletContext'
+import { useWallet } from '../../context/SimpleWalletProvider'
 import { useAccount } from 'wagmi'
 import QRCode from 'qrcode'
 import { ExpandableCard } from '../ui/ExpandableCard'
