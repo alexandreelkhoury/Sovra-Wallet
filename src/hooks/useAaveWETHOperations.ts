@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react'
-import { usePublicClient } from 'wagmi'
+import { useReadContract } from 'wagmi'
 import { parseUnits, encodeFunctionData, Address, formatUnits } from 'viem'
 import { CONTRACT_ADDRESSES } from '../config/privy'
 import { useTransactionManager } from './useTransactionManager'
-import { useWallet } from '../context/SimpleWalletContext'
+import { useWallet } from '../context/SimpleWalletProvider'
 import { useTransactionSender } from '../utils/transactionUtils'
 
 // ERC-20 ABI for approve
@@ -55,7 +55,6 @@ const AAVE_POOL_ABI = [
 ] as const
 
 export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
-  const publicClient = usePublicClient()
   const { executeTransaction } = useTransactionManager()
   const { walletMode, walletState } = useWallet()
   const { sendTransactionByMode, useSmartWallet, activeWallet } = useTransactionSender()
@@ -66,37 +65,30 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
   // Get the active wallet address from context (switches based on wallet mode)
   const userAddress = walletState.address as Address
 
-  // Get user's supplied WETH balance from aWETH token
-  const getSuppliedBalance = useCallback(async (): Promise<string> => {
-    if (!userAddress || !publicClient) return '0'
-
-    console.log('getSuppliedBalance: Fetching aWETH balance', {
-      userAddress,
-      walletMode,
-      contractAddress: CONTRACT_ADDRESSES.A_WETH
-    })
-
-    try {
-      const balance = await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.A_WETH,
-        abi: ERC20_ABI,
-        functionName: 'balanceOf',
-        args: [userAddress],
-      })
-
-      // aWETH has 18 decimals like WETH
-      const formattedBalance = formatUnits(balance as bigint, 18)
-      console.log('getSuppliedBalance: aWETH balance fetched', {
-        userAddress,
-        walletMode,
-        balance: formattedBalance
-      })
-      return formattedBalance
-    } catch (error) {
-      console.error('Failed to get supplied WETH balance:', error)
-      return '0'
+  // Read aWETH balance using useReadContract
+  const { 
+    data: rawSuppliedBalance, 
+    isLoading: isLoadingSupplied,
+    refetch: refetchSuppliedBalance
+  } = useReadContract({
+    address: CONTRACT_ADDRESSES.A_WETH,
+    abi: ERC20_ABI,
+    functionName: 'balanceOf',
+    args: userAddress ? [userAddress] : undefined,
+    query: {
+      enabled: !!userAddress,
+      staleTime: 30_000, // Cache for 30 seconds
+      refetchOnWindowFocus: false,
     }
-  }, [userAddress, publicClient, walletMode])
+  })
+
+  // Format the supplied balance
+  const suppliedBalance = rawSuppliedBalance ? formatUnits(rawSuppliedBalance as bigint, 18) : '0'
+
+  // Keep backwards compatibility - return the current balance
+  const getSuppliedBalance = useCallback(async (): Promise<string> => {
+    return suppliedBalance
+  }, [suppliedBalance])
 
   const supplyWETH = async (amount: string) => {
     if (!userAddress || !amount || parseFloat(amount) <= 0 || !activeWallet) {
@@ -167,6 +159,11 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
         setTimeout(onBalanceUpdate, 5000)
       }
       
+      // Refetch the supplied balance after successful supply
+      setTimeout(() => {
+        refetchSuppliedBalance()
+      }, 5000)
+      
       return supplyTxHash
 
     } catch (error) {
@@ -229,6 +226,11 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
         setTimeout(onBalanceUpdate, 5000)
       }
       
+      // Refetch the supplied balance after successful supply
+      setTimeout(() => {
+        refetchSuppliedBalance()
+      }, 5000)
+      
       return withdrawTxHash
 
     } catch (error) {
@@ -242,8 +244,9 @@ export function useAaveWETHOperations(onBalanceUpdate?: () => void) {
   return {
     supplyWETH,
     withdrawWETH,
-    withdrawAllWETH: () => withdrawWETH(), // Keep backwards compatibility
     getSuppliedBalance,
+    suppliedBalance,
+    isLoadingSupplied,
     isSupplying,
     isWithdrawing,
     error,
