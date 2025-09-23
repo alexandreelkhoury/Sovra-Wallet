@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { parseUnits, encodeFunctionData, Address, isAddress } from 'viem'
 import { CONTRACT_ADDRESSES } from '../config/privy'
 import { useTransactionManager } from './useTransactionManager'
-import { useWallet } from '../context/SimpleWalletContext'
+import { useWallet } from '../context/SimpleWalletProvider'
 import { useTransactionSender } from '../utils/transactionUtils'
 
 // ERC-20 ABI for transfer

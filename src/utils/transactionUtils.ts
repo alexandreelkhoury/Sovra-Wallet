@@ -1,6 +1,6 @@
 import { useWallets, useSendTransaction } from '@privy-io/react-auth'
 import { useSmartWallets } from '@privy-io/react-auth/smart-wallets'
-import { useWallet } from '../context/SimpleWalletContext'
+import { useWallet } from '../context/SimpleWalletProvider'
 
 export interface TransactionParams {
   to: `0x${string}`
