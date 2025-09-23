@@ -40,8 +40,6 @@ export const wagmiConfig = createConfig({
   },
 })
 
-export const chains = [baseSepolia]
-
 // Chain configuration
 export const SUPPORTED_CHAINS = [baseSepolia]
 

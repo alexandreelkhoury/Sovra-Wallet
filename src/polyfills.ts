@@ -13,5 +13,3 @@ if (typeof globalThis !== 'undefined') {
   globalThis.Buffer = Buffer
   globalThis.global = globalThis.global || globalThis
 }
-
-export { Buffer }

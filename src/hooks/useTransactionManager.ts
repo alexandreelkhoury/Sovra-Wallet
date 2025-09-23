@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { useWaitForTransactionReceipt } from 'wagmi'
 import { useToast } from '../components/ui/Toast'
 
-export interface TransactionState {
+interface TransactionState {
   isLoading: boolean
   hash?: string
   status: 'idle' | 'pending' | 'confirmed' | 'failed'
@@ -110,16 +110,8 @@ export function useTransactionManager() {
     }
   }, [addToast])
 
-  const reset = useCallback(() => {
-    setTxState({
-      isLoading: false,
-      status: 'idle'
-    })
-  }, [])
-
   return {
     txState,
     executeTransaction,
-    reset,
   }
 }
