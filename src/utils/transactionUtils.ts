@@ -15,15 +15,21 @@ export function useTransactionSender() {
 
   const sendTransactionByMode = async (params: TransactionParams): Promise<{ hash: string }> => {
     if (useSmartWallet) {
-      // Use smart wallet for sponsored transaction
+      // 🤖 Smart wallet: Seamless gasless transaction (no user confirmation needed)
+      // User doesn't need to know about blockchain - just works!
       if (!smartWalletClient) {
         throw new Error('Smart wallet client not available for sponsored transaction')
       }
-      const hash = await smartWalletClient.sendTransaction(params)
+      const hash = await smartWalletClient.sendTransaction(params, {
+        uiOptions: { showWalletUIs: false } // Hide modal for smart wallet
+      })
       return { hash }
     } else {
-      // Use normal wallet with gas fees
-      const result = await sendTransaction(params)
+      // 👤 Normal wallet: Show confirmation modal (user pays gas)
+      // User needs to approve transaction and pay gas fees
+      const result = await sendTransaction(params, {
+        uiOptions: { showWalletUIs: true } // Show modal for normal wallet
+      })
       return result
     }
   }
