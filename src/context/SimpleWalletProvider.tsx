@@ -62,14 +62,6 @@ export const SimpleWalletProvider: React.FC<SimpleWalletProviderProps> = ({ chil
   }
 
   useEffect(() => {
-    console.log('SimpleWalletProvider effect:', { 
-      ready, 
-      authenticated, 
-      walletsCount: wallets.length, 
-      walletMode, 
-      useSmartWallet,
-      smartWalletAddress: smartWallet?.address
-    })
 
     if (ready) {
       if (authenticated && wallets.length > 0) {

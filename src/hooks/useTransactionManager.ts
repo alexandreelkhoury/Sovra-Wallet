@@ -68,7 +68,7 @@ export function useTransactionManager() {
         title: 'Transaction Pending',
         message: `Your ${transactionName} transaction is being processed...`,
         txHash: result.hash,
-        duration: 0, // Don't auto-dismiss pending transactions
+        duration: 5000, // Don't auto-dismiss pending transactions
       })
 
       return result.hash
